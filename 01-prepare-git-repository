@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+#set -x
+
+self=$(readlink -f $0)
+
+test -n "$1" || exit 0
+test ! -d "$1" || exit 0
+
+
+SVNURL=svn://svn.code.sf.net/p/stxxl/code
+git svn init --prefix svn/ $SVNURL "$1"
+
+
+cd "$1"
+
+script=$(basename $0)
+cp -a "$self" "$script"
+git add "$script"
+git commit -m "prepare git repository"
+git branch -m from-svn-to-git
