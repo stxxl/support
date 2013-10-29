@@ -1,0 +1,90 @@
+#!/bin/sh
+set -e
+#set -x
+
+CRUFT="
+doxy
+algo/.cccc
+STXXL.pws
+.tm_project.cache
+apps/.pure
+io/.pure
+apps/note.sort.prof
+apps/note.sort.prof.2
+"
+
+BINARIES="
+tm_project.cache
+algo/ksort
+algo/ssort
+algo/stable_ksort
+apps/foo
+apps/ksort
+apps/peter/l1_gcc
+apps/peter/l1sort
+apps/peter/l2_gcc
+apps/peter/l2sort
+apps/sort
+containers/rnd_test
+containers/test_mstack
+containers/test_stack
+containers/test_vector
+io/disktest
+io/foo
+io/flush
+io/main
+io/sd_test
+mng/mngtest
+mng/test_streams
+test/dev
+test/features
+test/test_thr
+utils/createdisks
+stream/sruns
+stream/stream
+stream/test
+"
+
+lib=svn-to-git.utils.sh
+self=$(readlink -f $0)
+selflib=$(dirname $self)/$lib
+. "$selflib"
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+topdir=$(pwd)
+
+cp -a "$1" "$2"
+cp -a "$1.cvs" "$2.cvs"
+
+
+cd "$2.cvs"
+
+tag_cvs_revisions
+
+git checkout master
+git merge cvs/master
+git filter-branch --prune-empty --index-filter "git rm -r --cached --ignore-unmatch $(echo $CRUFT $BINARIES)" -- --all
+git for-each-ref --format="%(refname)" refs/original/ | xargs -n 1 git update-ref -d
+git reset --hard
+git tag -d start
+
+cd "$topdir"
+
+
+cd "$2"
+
+git fetch $topdir/"$2.cvs" master:master-cvs --tags
+
+reparent CVSr132 CVSr122
+
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+cp -a "$selflib" "$lib"
+git add "$script" "$lib"
+git commit -m "cleanup the CVS history"
