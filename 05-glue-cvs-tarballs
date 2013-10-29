@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+#set -x
+
+lib=svn-to-git.utils.sh
+self=$(readlink -f $0)
+selflib=$(dirname $self)/$lib
+. "$selflib"
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+cp -a "$1" "$2"
+
+
+cd "$2"
+
+prepend_parent 0.2 CVSr38
+prepend_parent 0.5 CVSr92
+prepend_parent 0.52 CVSr98
+prepend_parent 0.77 CVSr243
+
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+cp -a "$selflib" "$lib"
+git add "$script" "$lib"
+git commit -m "glue CVS and tarball history together"
