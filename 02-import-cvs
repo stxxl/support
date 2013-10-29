@@ -1,0 +1,45 @@
+#!/bin/sh
+set -e
+#set -x
+
+self=$(readlink -f $0)
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+cp -a "$1" "$2"
+
+
+cat > authors << EOF
+rdementi=Roman Dementiev <dementiev@mpi-sb.mpg.de>
+jmehnert=Jens Mehnert <jmehnert@mpi-sb.mpg.de>
+schultes=Dominik Schultes <schultes@mpi-sb.mpg.de>
+EOF
+
+git cvsimport -v -d $(pwd)/cvs -A authors -i -r cvs -R -L 170 -C "$2.cvs" stxxl
+(
+cd "$2.cvs"
+git reset --hard
+)
+
+cat > authors << EOF
+rdementi=Roman Dementiev <dementiev@ira.uka.de>
+EOF
+
+git cvsimport -v -d $(pwd)/cvs -A authors -i -r cvs -R -C "$2.cvs" stxxl
+(
+cd "$2.cvs"
+git reset --hard
+git tag glue/cvs-latest cvs/master
+)
+
+
+cd "$2"
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+git add "$script"
+git commit -m "import CVS history"
