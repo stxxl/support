@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+#set -x
+
+lib=svn-to-git.utils.sh
+self=$(readlink -f $0)
+selflib=$(dirname $self)/$lib
+. "$selflib"
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+cp -a "$1" "$2"
+
+
+cd "$2"
+
+untag_cvs_revisions
+untag_svn_revisions
+
+# apply the grafts
+rewrite_history
+
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+cp -a "$selflib" "$lib"
+git add "$script" "$lib"
+git commit -m "rewrite history"
