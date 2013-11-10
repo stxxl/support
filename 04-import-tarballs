@@ -1,0 +1,69 @@
+#!/bin/sh
+set -e
+#set -x
+
+lib=svn-to-git.utils.sh
+self=$(readlink -f $0)
+selflib=$(dirname $self)/$lib
+. "$selflib"
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+cp -a "$1" "$2"
+git init "$2+tmp"
+
+curdir=$(pwd)
+
+test -f stxxl_0.77.tgz || wget -O stxxl_0.77.tgz 'http://downloads.sourceforge.net/project/stxxl/stxxl/0.77/stxxl_0.77.tgz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fstxxl%2Ffiles%2Fstxxl%2F0.77%2F&ts=1341594687&use_mirror=ignum'
+test -f stxxl_0.2.tgz || wget http://algo2.iti.kit.edu/dementiev/files/stxxl_0.2.tgz
+test -f stxxl_0.5.tgz || wget http://algo2.iti.kit.edu/dementiev/files/stxxl_0.5.tgz
+test -f stxxl_0.52.tgz || wget http://algo2.iti.kit.edu/dementiev/files/stxxl_0.52.tgz
+test -f stxxl_0.77.tgz || wget http://algo2.iti.kit.edu/dementiev/files/stxxl_0.77.tgz
+
+import_tarball()
+{
+VER="$1"
+GIT_AUTHOR_DATE="$2"
+GIT_COMMITTER_DATE="$GIT_AUTHOR_DATE"
+export GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+
+echo stxxl | git-import-orig \
+	--verbose \
+	--no-merge \
+	--no-pristine-tar \
+	--upstream-branch=tarballs \
+	--upstream-version=${VER} \
+	--import-msg="STXXL release ${VER}" \
+	$curdir/stxxl_${VER}.tgz
+git tag -d upstream/${VER}
+git tag -m "STXXL release ${VER}" ${VER} tarballs
+pristine-tar -v commit $curdir/stxxl_${VER}.tgz ${VER}
+}
+
+(
+cd "$2+tmp"
+git config user.name "Roman Dementiev"
+git config user.email "dementiev@mpi-sb.mpg.de"
+
+import_tarball 0.2 "2003-07-01 11:59:12.000000000 +0200"
+import_tarball 0.5 "2003-11-21 15:29:33.000000000 +0100"
+import_tarball 0.52 "2004-01-28 12:25:11.000000000 +0100"
+
+git config user.email "dementiev@ira.uka.de"
+import_tarball 0.77 "2006-06-19 15:25:42.000000000 +0200"
+)
+
+cd "$2"
+
+git fetch $curdir/"$2+tmp" tarballs:tarballs pristine-tar:pristine-tar --tags
+
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+cp -a "$selflib" "$lib"
+git add "$script" "$lib"
+git commit -m "import 0.77 and older tarballs"

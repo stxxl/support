@@ -8,6 +8,14 @@ undo_branch_head_commit()
 	git reset --hard HEAD^
 }
 
+# revert the last commit on a branch head if it is an empty commit
+undo_empty_branch_head_commit()
+{
+	if [ "$(git rev-parse "${1}:")" = "$(git rev-parse "${1}^:")" ]; then
+		undo_branch_head_commit $1
+	fi
+}
+
 # reparent <commit> <new parent>...
 # replaces the old parents
 reparent()
