@@ -1,8 +1,9 @@
 #!/bin/bash
 ############################################################################
-#  stxxl-update.sh
+#  upload.sh
 #
-#  Bash script to update doxygen documentation of branches.
+#  Bash script to update doxygen documentation of branches and upload
+#  the compiled website to sourceforge.
 #
 #  Part of the STXXL. See http://stxxl.sourceforge.net
 #
