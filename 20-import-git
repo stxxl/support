@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+#set -x
+
+lib=svn-to-git.utils.sh
+self=$(readlink -f $0)
+selflib=$(dirname $self)/$lib
+. "$selflib"
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+cp -a "$1" "$2"
+
+cd "$2"
+
+
+git fetch git@github.com:stxxl/stxxl.git master:dev-1.4 --no-tags
+
+reparent 50c8e677afc91f5d75b9a0681fecad5ec84caf7e glue/svn2012/trunk
+
+git branch -m master trunk
+git branch master glue/svn2012/trunk
+
+git tag -d glue/svn2012/trunk
+git tag -d glue/svn-r1
+git tag -d glue/cvs-latest
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+cp -a "$selflib" "$lib"
+git add "$script" "$lib"
+git commit -m "join Timo's dev-1.4 git repository"
