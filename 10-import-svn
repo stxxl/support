@@ -1,0 +1,35 @@
+#!/bin/sh
+set -e
+#set -x
+
+self=$(readlink -f $0)
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+(
+mkdir -p "$2".tmp
+cd "$2".tmp
+mkdir -p stamps
+if [ ! -d base ]; then
+	cp -a ../"$1" base
+	touch stamps/base.stamp
+fi
+
+cp -a $(dirname $self)/steps .
+(make -f $self.mk 2>&1 ) | tee -a git2svn.log
+)
+
+cp -a "$2".tmp/99999 "$2"
+
+cd "$2"
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+cp -a "$self".mk "$script".mk
+cp -a "$(dirname $self)"/steps/ steps/
+git add "$script" "$script".mk steps
+git commit -m "import SVN history"
