@@ -62,16 +62,13 @@ remote_branch_to_local_branch()
 
 # inspired by
 # http://www.sonatype.com/people/2011/04/goodbye-svn-hello-git/
-# create annotated tag using committer, time, and message from branch head commit
-# place tag on the oldest commit that has the same tree-ish as the branch head
-# useful for converting git svn 'tag' branches to real tags
-# branch_to_tag <old branch name> <new tag name> [<parent branch name>]
-branch_to_tag()
+
+# find_sametree_ancestor <old tag or branch name> [<parent branch name>]
+find_sametree_ancestor()
 {
-	local tag_ref tag trunk
+	local tag_ref trunk
 	tag_ref="$1"
-	tag="$2"
-	trunk="$3"
+	trunk="$2"
 
 	local tree parent_ref parent merge target_ref
     tree=$( git rev-parse "$tag_ref": )
@@ -90,18 +87,51 @@ branch_to_tag()
     if [ "$merge" = "$parent" ]; then
         target_ref=$parent
     else
-        echo "tag has diverged: $tag"
+        echo "tag '$tag_ref' has diverged from '$trunk'" >&2
         target_ref="$tag_ref"
     fi
+
+    echo "$target_ref"
+}
+
+move_tag()
+{
+	local tag tag_ref target_ref
+	tag="$1"
+	tag_ref="$2"
+	target_ref="$3"
 
     # create an annotated tag based on the last commit in the tag, and delete the "branchy" ref for the tag
     git show -s --pretty='format:%s%n%n%b' "$tag_ref" | \
     env GIT_COMMITTER_NAME="$(  git show -s --pretty='format:%an' "$tag_ref" )" \
         GIT_COMMITTER_EMAIL="$( git show -s --pretty='format:%ae' "$tag_ref" )" \
         GIT_COMMITTER_DATE="$(  git show -s --pretty='format:%ad' "$tag_ref" )" \
-        git tag -a -F - "$tag" "$target_ref"
+        git tag -a -f -F - "$tag" "$target_ref"
+}
+
+# create annotated tag using committer, time, and message from branch head commit
+# place tag on the oldest commit that has the same tree-ish as the branch head
+# useful for converting git svn 'tag' branches to real tags
+# branch_to_tag <old branch name> <new tag name> [<parent branch name>]
+branch_to_tag()
+{
+	local tag_ref tag trunk
+	tag_ref="$1"
+	tag="$2"
+	trunk="$3"
+
+	local target_ref
+	target_ref="$(find_sametree_ancestor "$tag_ref" "$trunk")"
+
+	move_tag "$tag" "$tag_ref" "$target_ref"
 
     git branch -D "$tag_ref"
+}
+
+# svntag2gittag <old branch name> <new tag name> [<parent branch name>]
+svntag2gittag()
+{
+	branch_to_tag "$@"
 }
 
 # convert a tag to a branch, tag annotation gets lost
@@ -172,8 +202,10 @@ untag_cvs_revisions()
 rewrite_history()
 {
 	#git rev-list --all --parents > revlist.old
-	git filter-branch -d /tmp/git-filter-branch-tmp --tag-name-filter cat -- --all
+	tmpd=$(mktemp -d gfbXXXXXXXX)
+	git filter-branch -d "$tmpd/gfb" --tag-name-filter cat -- --all
+	rm -rf "$tmpd"
 	rm -f .git/info/grafts
-	git for-each-ref --format="%(refname)" refs/original/ | xargs -n 1 git update-ref -d
+	git for-each-ref --format="%(refname)" refs/original/ | xargs -r -n 1 git update-ref -d
 	#git rev-list --all --parents > revlist.new
 }
