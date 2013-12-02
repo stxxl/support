@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+#set -x
+
+lib=svn-to-git.utils.sh
+self=$(readlink -f $0)
+selflib=$(dirname $self)/$lib
+. "$selflib"
+
+test -n "$1" || exit 0
+test -d "$1" || exit 0
+test -n "$2" || exit 0
+test ! -d "$2" || exit 0
+
+cp -a "$1" "$2"
+
+cd "$2"
+
+remote_branch_to_local_branch svn/trunk master
+
+for branch in $(git branch -r) ; do
+	remote_branch_to_local_branch $branch
+done
+
+# cointains several branches that were imported individually, too
+git branch -D svn/anbe
+
+# tag everything with its svn revision
+tag_svn_revisions
+
+git checkout from-svn-to-git
+script=$(basename $0)
+cp -a "$self" "$script"
+cp -a "$selflib" "$lib"
+git add "$script" "$lib"
+git commit -m "cleaning up the imported svn history, part 1"
