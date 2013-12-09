@@ -1,0 +1,12 @@
+debug_*
+release_*
+buildbot.tac
+gitpoller-*
+*.log
+*.pid
+master.cfg.sample
+master_secret*
+public_html/
+state.sqlite
+templates/
+
