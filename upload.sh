@@ -64,7 +64,7 @@ update_doxy() {
 
     run git fetch --all
     run git reset --hard origin/$BRANCH
-    run git clean -d -f
+    run git clean -d -f -x
 
     # failsafe check
     [ -e "include/stxxl.h" ] || exit
@@ -77,9 +77,6 @@ update_doxy() {
     fi
 
     ### Generate clean doxygen documentation
-
-    # old doxygen should already have been cleaned
-    rm -rvf doxygen-html
 
     # move config.h.in to config.h
     mv include/stxxl/bits/config.h.in include/stxxl/bits/config.h
@@ -96,7 +93,25 @@ update_doxy() {
     GITDESC=`git describe --tags`
     GITHASH=`git rev-parse HEAD`
 
-    sed -i "s@<li class=\"footer\">Generated@<li class=\"footer\"><a href=\"http://github.com/stxxl/stxxl/commit/$GITHASH\">$GITDESC</a> Generated@" $DOXYPATH/*.html
+    GATRACK="<script type=\"text/javascript\">\\
+var _paq = _paq || [];\
+  _paq.push(['trackPageView']);\
+  _paq.push(['enableLinkTracking']);\
+  (function() {\
+    var u='http://panthema.net/wik-331/';\
+    _paq.push(['setTrackerUrl', u+'js/']);\
+    _paq.push(['setSiteId', '1']);\
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript';\
+    g.defer=true; g.async=true; g.src=u+'js/'; s.parentNode.insertBefore(g,s);\
+  })();\\
+</script>\\
+<noscript><img src=\"http://panthema.net/wik-331/js/?idsite=1\&amp;rec=1\" style=\"border:0\" alt=\"\" /></noscript>"
+
+    sed -i "s@<li class=\"footer\">Generated@<li class=\"footer\"><a href=\"http://github.com/stxxl/stxxl/commit/$GITHASH\">STXXL $GITDESC</a>$GATRACK - Generated@" $DOXYPATH/*.html
+    if [ $? != 0 ]; then
+        echo "Sed failed with return code $?"
+        exit
+    fi
 
     # save current git hash for future comparison
     echo $GITHASH > $DOXYPATH/githash.txt
@@ -109,13 +124,13 @@ update_doxy() {
 }
 
 update_doxy master
-update_doxy 1.3
+#update_doxy 1.3
 
 # double check
 [ -e "index.html" ] || exit
 
 # copy to sourceforge
-run rsync -azP --delete-after \
+run rsync -az --delete-after \
     --exclude /.git \
     --exclude /upload.sh \
     $PWD/ \
