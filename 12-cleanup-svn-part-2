@@ -17,7 +17,7 @@ cp -a "$1" "$2"
 cd "$2"
 
 # CVS history
-add_parent glue/svn-r1 master-cvs
+#add_parent glue/svn-r1 master-cvs
 
 # there were commits on the tag afterwards
 reparent r436 r435
@@ -50,6 +50,46 @@ add_parent r1174 r801
 add_parent r1240 r1239
 add_parent r1348 r1319
 add_parent r1504 r1503
+
+# merges on kernelaio/posixaio/libaio branches
+add_parent r3099 r3097
+add_parent r3083 r3082
+add_parent r3073 r3044
+add_parent r3072 r3064
+add_parent r2905 r2903
+add_parent r2523 r2520
+add_parent r2215 r2211
+
+# merges on parallel_pipelining_integration
+add_parent r3223 r3213
+add_parent r3222 r3212
+add_parent r3221 r3189
+add_parent r3219 r3165
+add_parent r3217 r3193
+add_parent r2564 r2563
+add_parent r2562 r2545
+add_parent r2561 r2560
+
+# lots of cherry-picked merges
+add_parent r2278 r2255
+add_parent r2276 r2245
+add_parent r2275 r2243
+add_parent r2274 r2258
+add_parent r2273 r2237
+add_parent r2271 r2166
+add_parent r2270 r2159
+add_parent r2268 r2162
+add_parent r2267 r2134
+add_parent r2266 r2131
+add_parent r2262 r2130
+
+add_parent r2156 r2129
+add_parent r2155 r2153
+add_parent r1907 r1906
+
+#add_parent r1543 r1547 # main take-over of pipelining?
+
+add_parent r1448 r1447
 
 # empty branches
 undo_empty_branch_head_commit svn/ceph_aio
